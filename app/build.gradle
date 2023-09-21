@@ -1,0 +1,83 @@
+plugins {
+    id 'com.android.application'
+    id 'com.github.ben-manes.versions' version '0.39.0'
+}
+
+android {
+    namespace 'com.webgeoservices.geofencingsizetest'
+    compileSdk 33
+
+    defaultConfig {
+        applicationId "com.webgeoservices.geofencingsizetest"
+        minSdk 24
+        targetSdk 33
+        versionCode 1
+        versionName "1.0"
+
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+}
+
+dependencies {
+
+    api 'androidx.appcompat:appcompat:1.6.1'
+    api 'com.google.android.material:material:1.9.0'
+    api 'androidx.constraintlayout:constraintlayout:2.1.4'
+    testImplementation 'junit:junit:4.13.2'
+    androidTestImplementation 'androidx.test.ext:junit:1.1.5'
+    androidTestImplementation 'androidx.test.espresso:espresso-core:3.5.1'
+
+    api "com.webgeoservices.woosmapgeofencing:woosmap-mobile-sdk:4.0.3"
+    api "androidx.room:room-runtime:2.5.2"
+}
+
+/* Tested with Gradle 6.3 */
+
+tasks.register("depsize") {
+    description = 'Prints dependencies for "default" configuration'
+    doLast() {
+        listConfigurationDependencies(configurations.default)
+    }
+}
+
+tasks.register("depsize-all-configurations") {
+    description = 'Prints dependencies for all available configurations'
+    doLast() {
+        configurations
+                .findAll { it.isCanBeResolved() }
+                .each { listConfigurationDependencies(it) }
+    }
+}
+
+def listConfigurationDependencies(Configuration configuration) {
+    def formatStr = "%,10.2f"
+    //out << "Total length is ${it.length()}"
+    def size = configuration.collect { it.length() / (1024 * 1024) }.sum()
+    out << "Total size is ${size}"
+    def out = new StringBuffer()
+    out << "\nConfiguration name: \"${configuration.name}\"\n"
+    if (size) {
+        out << 'Total dependencies size:'.padRight(65)
+        out << "${String.format(formatStr, size)} Mb\n\n"
+
+        configuration.sort { -it.length() }
+                .each {
+                    out << "${it.name}".padRight(65)
+                    out << "${String.format(formatStr, (it.length() / 1024))} kb\n"
+                }
+    } else {
+        out << 'No dependencies found';
+    }
+    println(out)
+}
